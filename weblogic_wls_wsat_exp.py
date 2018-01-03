@@ -92,7 +92,7 @@ def weblogic_rce(target,cmd,output_file):
         elif r.status_code == 404:
             return (False,'404 no vulnerability')
         else:
-            return (False,'{} exist vul but something went wrong'.format(r.status_code))
+            return (False,'{} something went wrong'.format(r.status_code))
     except requests.exceptions.ReadTimeout:
         return (False,'timeout')
     except Exception,ex:

