@@ -32,12 +32,10 @@ modifide by weblogic-t3-info.nse of nmap script
 '''
 def check_weblogic_version(host,port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address = (host, port)
     sock.settimeout(timeout)
     try:
-        sock.connect(server_address)
+        sock.connect((host, port))
         # Send headers
-        send_count = 0
         headers = 't3 11.1.2\nAS:2048\nHL:19\n\n'
         # print 'sending Hello'
         sock.sendall(headers)

