@@ -16,10 +16,19 @@ def check_weblogic(host,port):
     url = 'http://{}:{}/conso1e'.format(host,port)
     try:
         r = requests.get(url,headers = headers ,timeout =timeout)
+        #guess by headers:
+        result1,msg1 = check_weblogic_by_header(r.headers)
+        #check by t3:
         if r.status_code == 404 and 'From RFC 2068' in r.text:
-            return check_weblogic_version(host,port)
+            result2,msg2 = check_weblogic_by_t3(host,port)
+        #set the result and version:
+        if result2:
+            result = result2
+            msg = msg2
         else:
-            return (False,'may be not weblogic')
+            result = result1
+            msg = msg1 if result1 else msg2
+        return result,msg
     except requests.exceptions.ConnectionError:
         return (False,'ConnectionError')
     except :
@@ -30,7 +39,7 @@ def check_weblogic(host,port):
 get weblogic version by t3
 modifide by weblogic-t3-info.nse of nmap script
 '''
-def check_weblogic_version(host,port):
+def check_weblogic_by_t3(host,port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout)
     try:
@@ -58,6 +67,23 @@ def check_weblogic_version(host,port):
         return (False, 'check version fail')
     finally:
         sock.close()
+
+def check_weblogic_by_header(headers):
+    status,msg = False,'may be not weblogic'
+    if 'X-Powered-By' in headers:
+        m = re.findall(r'Servlet/(.+)\s+JSP/(.+)',headers['X-Powered-By'])
+        if m :
+            Servlet,JSP = m[0]
+            if Servlet == '2.4' and JSP == '2.0':
+                status = True
+                msg = 'weblogic 9.x'
+            elif Servlet == '2.5' and JSP == '2.1':
+                status = True
+                msg = 'weblogic 10.x'
+            elif Servlet == '3.0' and JSP == '2.2':
+                status = True
+                msg = 'weblogicc 12.x'
+    return status,msg
 
 def main():
     if len(sys.argv) != 3:
